@@ -1,22 +1,5 @@
-name: Deploy to LWS (SFTP)
-
-on:
-  push:
-    branches: [ "main" ]
-  workflow_dispatch:
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install lftp
-        run: sudo apt-get update && sudo apt-get install -y lftp
-
       - name: Upload via SFTP mirror
+        shell: bash
         env:
           HOST: ${{ secrets.LWS_SFTP_HOST }}
           USER: ${{ secrets.LWS_SFTP_USER }}
@@ -24,14 +7,32 @@ jobs:
           PORT: ${{ secrets.LWS_SFTP_PORT }}
           REMOTE_DIR: ${{ secrets.LWS_REMOTE_DIR }}
         run: |
+          set -euo pipefail
+
+          # Vérifs (sans afficher les secrets)
+          for v in HOST USER PASS PORT REMOTE_DIR; do
+            if [ -z "${!v:-}" ]; then
+              echo "ERROR: secret $v is empty or missing."
+              exit 2
+            fi
+          done
+
+          echo "Deploy target: host=${HOST} port=${PORT} remote_dir=${REMOTE_DIR}"
+
           lftp -e "
             set sftp:auto-confirm yes;
             set net:timeout 20;
             set net:max-retries 2;
-            open -u $USER,$PASS sftp://$HOST:$PORT;
-            mirror -R --verbose --parallel=2 --delete \
+
+            # Connexion (syntaxe robuste: port via -p)
+            open -u ${USER},${PASS} -p ${PORT} sftp://${HOST};
+
+            # Upload
+            mirror -R --verbose --parallel=2 \
               --exclude-glob .git/ \
               --exclude-glob .github/ \
-              ./ $REMOTE_DIR/;
+              ./ ${REMOTE_DIR}/;
+
             bye
           "
+
