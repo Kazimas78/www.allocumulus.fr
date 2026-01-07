@@ -1,3 +1,23 @@
+# ALLOcumulus Deploy Workflow - v1.1
+name: Deploy to LWS (SFTP)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
       - name: Upload via SFTP mirror
         shell: bash
         env:
@@ -9,7 +29,7 @@
         run: |
           set -euo pipefail
 
-          # Vérifs (sans afficher les secrets)
+          # Verify required secrets exist (without printing them)
           for v in HOST USER PASS PORT REMOTE_DIR; do
             if [ -z "${!v:-}" ]; then
               echo "ERROR: secret $v is empty or missing."
@@ -24,10 +44,8 @@
             set net:timeout 20;
             set net:max-retries 2;
 
-            # Connexion (syntaxe robuste: port via -p)
             open -u ${USER},${PASS} -p ${PORT} sftp://${HOST};
 
-            # Upload
             mirror -R --verbose --parallel=2 \
               --exclude-glob .git/ \
               --exclude-glob .github/ \
@@ -35,4 +53,3 @@
 
             bye
           "
-
