@@ -1,0 +1,37 @@
+name: Deploy to LWS (SFTP)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: Upload via SFTP mirror
+        env:
+          HOST: ${{ secrets.LWS_SFTP_HOST }}
+          USER: ${{ secrets.LWS_SFTP_USER }}
+          PASS: ${{ secrets.LWS_SFTP_PASS }}
+          PORT: ${{ secrets.LWS_SFTP_PORT }}
+          REMOTE_DIR: ${{ secrets.LWS_REMOTE_DIR }}
+        run: |
+          lftp -e "
+            set sftp:auto-confirm yes;
+            set net:timeout 20;
+            set net:max-retries 2;
+            open -u $USER,$PASS sftp://$HOST:$PORT;
+            mirror -R --verbose --parallel=2 --delete \
+              --exclude-glob .git/ \
+              --exclude-glob .github/ \
+              ./ $REMOTE_DIR/;
+            bye
+          "
