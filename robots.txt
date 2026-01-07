@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /*.php$
+
+# Optimisation pour les moteurs de recherche
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://allocumulus.fr/sitemap.xml
+
+# Spécifique à Google
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Spécifique à Bing
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
