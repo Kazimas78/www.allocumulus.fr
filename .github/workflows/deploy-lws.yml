@@ -46,8 +46,7 @@ jobs:
 
             open -u ${USER},${PASS} -p ${PORT} sftp://${HOST};
 
-            mirror -R --verbose --parallel=2 \
-              --exclude-glob .git/ \
+              mirror -R --verbose --parallel=2 --no-perms --no-umask \              --exclude-glob .git/ \
               --exclude-glob .github/ \
               ./ ${REMOTE_DIR}/;
 
