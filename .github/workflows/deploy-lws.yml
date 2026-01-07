@@ -46,9 +46,15 @@ jobs:
 
             open -u ${USER},${PASS} -p ${PORT} sftp://${HOST};
 
-              mirror -R --verbose --parallel=2 --no-perms --no-umask \              --exclude-glob .git/ \
+            # Ensure remote directory exists, then work inside it
+            mkdir -p ${REMOTE_DIR};
+            cd ${REMOTE_DIR};
+
+            # Upload current repo content into remote current dir
+            mirror -R --verbose --parallel=2 --no-perms --no-umask \
+              --exclude-glob .git/ \
               --exclude-glob .github/ \
-              ./ ${REMOTE_DIR}/;
+              ./ ./;
 
             bye
           "
